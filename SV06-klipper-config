@@ -10,7 +10,7 @@
 #
 # See docs/Config_Reference.md for a description of parameters.
 [mcu]
-serial: /dev/serial/by-id/usb-1a86_Serial-if00-port0
+serial: /dev/ttyUSB0
 restart_method: command
 
 [printer]
@@ -96,10 +96,10 @@ filament_diameter: 1.750
 heater_pin: PA1
 sensor_type: EPCOS 100K B57560G104F
 sensor_pin: PC5
-control: pid
-pid_kd: 86.991
-pid_kp: 21.479
-pid_ki: 1.326
+#control: pid
+#pid_kd: 86.991
+#pid_kp: 21.479
+#pid_ki: 1.326
 min_temp: 0
 max_temp: 300
 
@@ -115,10 +115,10 @@ uart_address: 3
 heater_pin: PA2
 sensor_type: EPCOS 100K B57560G104F
 sensor_pin: PC4
-control: pid
-pid_kp: 64.440
-pid_ki: 0.773
-pid_kd: 1343.571
+#control: pid
+#pid_kp: 64.440
+#pid_ki: 0.773
+#pid_kd: 1343.571
 min_temp: 0
 max_temp: 130
 
@@ -129,7 +129,7 @@ pin: PA0
 pin: PB1
 x_offset: 28
 y_offset: -20
-z_offset: 0
+#z_offset: 0
 samples: 2
 samples_tolerance: 0.015
 samples_tolerance_retries: 5
@@ -157,3 +157,83 @@ sclk_pin: PB13
 sid_pin: PB15
 encoder_pins: ^PB14, ^PB10
 click_pin: ^!PB2
+
+[include mainsail.cfg]
+
+[gcode_macro START_PRINT]
+gcode:
+    {% set BED_TEMP = params.BED_TEMP|default(60)|float %}
+    {% set EXTRUDER_TEMP = params.EXTRUDER_TEMP|default(190)|float %}
+    # Start bed heating (but don't wait for it)
+    M140 S{BED_TEMP}
+    # Use absolute coordinates
+    G90
+    # Reset the G-Code Z offset (adjust Z offset if needed)
+    SET_GCODE_OFFSET Z=0.0
+    # Home the printer
+    G28
+    # Move the nozzle near the bed
+    G1 Z5 F3000
+    # Move the nozzle very close to the bed
+    G1 Z0.15 F300
+    # Wait for bed to reach temperature
+    M190 S{BED_TEMP}
+    # Set and wait for nozzle to reach temperature
+    M109 S{EXTRUDER_TEMP}
+
+    [gcode_macro END_PRINT]
+gcode:
+    # Turn off bed, extruder, and fan
+    M140 S0
+    M104 S0
+    M106 S0
+    # Move nozzle away from print while retracting
+    G91
+    G1 X-2 Y-2 E-3 F300
+    # Raise nozzle by 10mm
+    G1 Z10 F3000
+    G90
+    # Disable steppers
+    M84
+
+#*# <---------------------- SAVE_CONFIG ---------------------->
+#*# DO NOT EDIT THIS BLOCK OR BELOW. The contents are auto-generated.
+#*#
+#*# [bed_mesh default]
+#*# version = 1
+#*# points =
+#*# 	-0.337500, -0.222500, -0.126875, -0.062500, -0.021250, -0.001875, -0.010625, -0.050000, -0.116875, -0.205000
+#*# 	-0.259375, -0.174375, -0.093125, -0.033750, 0.005625, 0.026875, 0.026875, -0.005625, -0.061875, -0.135000
+#*# 	-0.231875, -0.147500, -0.076875, -0.023125, 0.014375, 0.035625, 0.039375, 0.022500, -0.013750, -0.074375
+#*# 	-0.205625, -0.138125, -0.073125, -0.018750, 0.021875, 0.049375, 0.053125, 0.045625, 0.015625, -0.036875
+#*# 	-0.187500, -0.127500, -0.068125, -0.016875, 0.010625, 0.036250, 0.043125, 0.041250, 0.015000, -0.026875
+#*# 	-0.181250, -0.125625, -0.064375, -0.017500, 0.011250, 0.031875, 0.048125, 0.040625, 0.016875, -0.030000
+#*# 	-0.175625, -0.122500, -0.059375, -0.017500, 0.010000, 0.032500, 0.045625, 0.033750, 0.004375, -0.031875
+#*# 	-0.192500, -0.140000, -0.076250, -0.033125, -0.003125, 0.023750, 0.025625, 0.009375, -0.022500, -0.065625
+#*# 	-0.232500, -0.171250, -0.101875, -0.057500, -0.020625, 0.000000, 0.003750, -0.020000, -0.050625, -0.105000
+#*# 	-0.249375, -0.180625, -0.112500, -0.065000, -0.031875, -0.011250, -0.011875, -0.037500, -0.081875, -0.147500
+#*# x_count = 10
+#*# y_count = 10
+#*# mesh_x_pps = 2
+#*# mesh_y_pps = 2
+#*# algo = bicubic
+#*# tension = 0.2
+#*# min_x = 28.0
+#*# max_x = 209.97
+#*# min_y = 20.0
+#*# max_y = 204.95
+#*#
+#*# [probe]
+#*# z_offset = 2.430
+#*#
+#*# [heater_bed]
+#*# control = pid
+#*# pid_kp = 68.402
+#*# pid_ki = 1.229
+#*# pid_kd = 951.646
+#*#
+#*# [extruder]
+#*# control = pid
+#*# pid_kp = 23.529
+#*# pid_ki = 1.508
+#*# pid_kd = 91.763
